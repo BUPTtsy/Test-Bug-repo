@@ -7,5 +7,5 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
 }
 export const loadTasks = () => request<Task[]>('/api/tasks');
 export const createTask = (title: string) => request<Task>('/api/tasks', {method: 'POST', body: JSON.stringify({title})});
-export const updateTask = (id: number, fields: Partial<Task>) => request<Task>(`/api/tasks/${id}`, {method: 'POST', body: JSON.stringify(fields)});
+export const updateTask = (id: number, fields: Partial<Task>) => request<Task>(`/api/tasks/${id}`, {method: 'PATCH', body: JSON.stringify(fields)});
 export const removeTask = (id: number) => request<{ok: boolean}>(`/api/tasks/${id}`, {method: 'DELETE'});
