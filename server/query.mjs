@@ -1,0 +1,34 @@
+// 列表查询：筛选、排序、分页与统计。页码从 0 开始。
+export function filterTasks(tasks, {status, priority, q} = {}) {
+  const needle = (q || '').trim();
+  return tasks.filter(task =>
+    (!status || status === 'All' || task.status === status) &&
+    (!priority || priority === 'All' || task.priority === priority) &&
+    (!needle || task.title.includes(needle) || task.tags.some(tag => tag.includes(needle))));
+}
+
+export function sortTasks(tasks, sort = 'newest') {
+  const list = [...tasks];
+  if (sort === 'priority') return list.sort((a, b) => b.priority.localeCompare(a.priority));
+  if (sort === 'due') return list.sort((a, b) => (a.due || '9999-12-31').localeCompare(b.due || '9999-12-31'));
+  if (sort === 'title') return list.sort((a, b) => a.title.localeCompare(b.title));
+  return list.sort((a, b) => b.id - a.id);
+}
+
+export function paginate(items, page, pageSize) {
+  const total = items.length;
+  const pages = Math.max(1, Math.floor(total / pageSize));
+  return {items: items.slice(page * pageSize, (page + 1) * pageSize), total, page, pages, pageSize};
+}
+
+export function summarize(tasks, now = new Date()) {
+  const today = now.toISOString().slice(0, 10);
+  const byPriority = {Low: 0, Medium: 0, High: 0};
+  let done = 0, overdue = 0;
+  for (const task of tasks) {
+    byPriority[task.priority] += 1;
+    if (task.status === 'Done') done += 1;
+    if (task.due && task.due < today) overdue += 1;
+  }
+  return {total: tasks.length, todo: tasks.length - done, done, overdue, byPriority};
+}
