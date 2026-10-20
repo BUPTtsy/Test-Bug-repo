@@ -77,3 +77,9 @@ export function applyFields(task, fields) {
   if ('assignee' in fields) next.assignee = normalizeAssignee(fields.assignee);
   return next;
 }
+
+export function completeTasks(tasks, ids) {
+  if (!Array.isArray(ids) || ids.some(id => !Number.isInteger(id))) fail('ids must be an array of task ids');
+  const selected = new Set(ids);
+  return tasks.map(task => selected.has(task.id) ? {...task, status: 'Done'} : task);
+}

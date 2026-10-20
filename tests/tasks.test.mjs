@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {seed, validateTitle, validateDue, validateTags, createTask, applyFields, ValidationError} from '../server/tasks.mjs';
-import {filterTasks, sortTasks, paginate} from '../server/query.mjs';
+import {seed, validateTitle, validateDue, validateTags, createTask, applyFields, completeTasks, ValidationError} from '../server/tasks.mjs';
+import {filterTasks, sortTasks, paginate, summarize} from '../server/query.mjs';
 import {loadSettings} from '../server/config.mjs';
 import {toCsv} from '../server/csv.mjs';
 
@@ -27,6 +27,12 @@ test('patch preserves unrelated task fields', () => {const t = seed()[0]; const 
 test('status rejects out-of-contract values', () => assert.throws(() => applyFields(seed()[0], {status: 'hidden'}), ValidationError));
 test('patch updates the due date', () => assert.equal(applyFields(seed()[0], {due: '2026-05-05'}).due, '2026-05-05'));
 test('patch updates the priority', () => assert.equal(applyFields(seed()[0], {priority: 'Low'}).priority, 'Low'));
+test('bulk completion updates only the selected tasks', () => {
+  const next = completeTasks(seed(), [1, 2]);
+  assert.deepEqual(next.filter(t => t.status === 'Done').map(t => t.id), [1, 2, 3, 6, 11]);
+  assert.equal(seed()[0].status, 'Todo');
+  assert.throws(() => completeTasks(seed(), ['1']), ValidationError);
+});
 test('filter by status and priority', () => {
   assert.deepEqual(filterTasks(seed(), {status: 'Done'}).map(t => t.id), [3, 6, 11]);
   assert.equal(filterTasks(seed(), {priority: 'High'}).length, 5);
@@ -56,6 +62,11 @@ test('paginate counts a partial last page', () => {
   assert.equal(paginate(seed(), 0, 4).pages, 4);
   assert.equal(paginate(seed().slice(0, 12), 0, 4).pages, 3);
   assert.equal(paginate([], 0, 4).pages, 1);
+});
+test('overdue counts only unfinished tasks', () => {
+  const stats = summarize(seed(), new Date('2026-06-01T00:00:00Z'));
+  assert.equal(stats.overdue, 4);
+  assert.equal(stats.done, 3);
 });
 test('csv export handles missing assignees and quotes', () => {
   const lines = toCsv(seed()).trimEnd().split('\n');

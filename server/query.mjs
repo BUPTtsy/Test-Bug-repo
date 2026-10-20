@@ -30,7 +30,7 @@ export function summarize(tasks, now = new Date()) {
   for (const task of tasks) {
     byPriority[task.priority] += 1;
     if (task.status === 'Done') done += 1;
-    if (task.due && task.due < today) overdue += 1;
+    if (task.status !== 'Done' && task.due && task.due < today) overdue += 1;
   }
   return {total: tasks.length, todo: tasks.length - done, done, overdue, byPriority};
 }

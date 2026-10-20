@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
-import {seed, createTask, applyFields, ValidationError} from './tasks.mjs';
+import {seed, createTask, applyFields, completeTasks, ValidationError} from './tasks.mjs';
 import {filterTasks, sortTasks, paginate, summarize} from './query.mjs';
 import {toCsv} from './csv.mjs';
 import {loadSettings} from './config.mjs';
@@ -48,14 +48,16 @@ const server = http.createServer(async (req,res) => {
     }
     if (url.pathname === '/api/tasks' && req.method === 'POST') {
       const fields = await body(req);
-      mutation = mutation.then(async () => {const task=createTask(nextId(), fields);tasks=[task,...tasks];await persist();send(res,201,task);});
-      await mutation;return;
+      const created = mutation.then(async () => {const task=createTask(nextId(), fields);tasks=[task,...tasks];await persist();return task;});
+      mutation = created.catch(() => {});
+      return send(res, 201, await created);
     }
     if (url.pathname === '/api/tasks/bulk-complete' && req.method === 'POST') {
       const {ids} = await body(req);
-      if (!Array.isArray(ids) || ids.some(id => !Number.isInteger(id))) throw new ValidationError('ids must be an array of task ids');
-      tasks = tasks.map(task => ({...task, status:'Done'}));
-      await persist();return send(res, 200, {updated: ids.length});
+      const next = completeTasks(tasks, ids);
+      const updated = next.filter((task, index) => task !== tasks[index]).length;
+      tasks = next;
+      await persist();return send(res, 200, {updated});
     }
     const match = url.pathname.match(/^\/api\/tasks\/(\d+)$/);
     if (match) {

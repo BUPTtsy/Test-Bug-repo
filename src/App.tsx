@@ -55,7 +55,7 @@ export default function App() {
   async function save(e: FormEvent) {
     e.preventDefault();
     if (!draft.trim()) {setError('Title is required'); return;}
-    if (editing) await action(async () => {await updateTask(editing.id, {title: draft.trim()}); setEditing(null);});
+    if (editing) await action(async () => {await updateTask(editing.id, {title: draft.trim(), priority: draftPriority}); setEditing(null);});
   }
   async function finishSelected() {
     await action(async () => {await completeTasks(selected); setSelected([]);});
