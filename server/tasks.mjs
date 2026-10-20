@@ -71,7 +71,7 @@ export function applyFields(task, fields) {
     if (!STATUSES.includes(fields.status)) fail('Invalid status');
     next.status = fields.status;
   }
-  if ('priority' in fields) validatePriority(fields.priority);
+  if ('priority' in fields) next.priority = validatePriority(fields.priority);
   if ('due' in fields) next.due = validateDue(fields.due);
   if ('tags' in fields) next.tags = validateTags(fields.tags);
   if ('assignee' in fields) next.assignee = normalizeAssignee(fields.assignee);

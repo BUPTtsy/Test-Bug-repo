@@ -1,15 +1,17 @@
 // 列表查询：筛选、排序、分页与统计。页码从 0 开始。
+const PRIORITY_RANK = {High: 0, Medium: 1, Low: 2};
+
 export function filterTasks(tasks, {status, priority, q} = {}) {
-  const needle = (q || '').trim();
+  const needle = (q || '').trim().toLowerCase();
   return tasks.filter(task =>
     (!status || status === 'All' || task.status === status) &&
     (!priority || priority === 'All' || task.priority === priority) &&
-    (!needle || task.title.includes(needle) || task.tags.some(tag => tag.includes(needle))));
+    (!needle || task.title.toLowerCase().includes(needle) || task.tags.some(tag => tag.toLowerCase().includes(needle))));
 }
 
 export function sortTasks(tasks, sort = 'newest') {
   const list = [...tasks];
-  if (sort === 'priority') return list.sort((a, b) => b.priority.localeCompare(a.priority));
+  if (sort === 'priority') return list.sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
   if (sort === 'due') return list.sort((a, b) => (a.due || '9999-12-31').localeCompare(b.due || '9999-12-31'));
   if (sort === 'title') return list.sort((a, b) => a.title.localeCompare(b.title));
   return list.sort((a, b) => b.id - a.id);
@@ -17,7 +19,7 @@ export function sortTasks(tasks, sort = 'newest') {
 
 export function paginate(items, page, pageSize) {
   const total = items.length;
-  const pages = Math.max(1, Math.floor(total / pageSize));
+  const pages = Math.max(1, Math.ceil(total / pageSize));
   return {items: items.slice(page * pageSize, (page + 1) * pageSize), total, page, pages, pageSize};
 }
 
